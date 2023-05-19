@@ -51,5 +51,5 @@ export default function Banner() {
         {user && <div>{`Logged in as ${user}`} <span onClick={handleLogOut}>(LogOut)</span></div>}
       </div>
     </StyledBanner>
-  )
+  ) 
 }
