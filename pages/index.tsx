@@ -1,5 +1,5 @@
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth'
-import { auth } from '../firebase/firebaseconfig'
+import { auth, signInWithEmailAndPassword, signInWithGoogle } from '../firebase/firebaseconfig'
+import { useAuthState } from "react-firebase-hooks/auth"
 import Head from 'next/head'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
@@ -112,58 +112,53 @@ const Features = styled.div`
 export default function SignUp() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [username, setusername] = useState('')
-  const [user, setUser] = useState({})
-  const [showlogin, setShowLogin] = useState(true)
+  const [user, loading, error] = useAuthState(auth)
+  const [showlogin, setShowlogin] = useState(Boolean)
   const router = useRouter()
 
-  const handleSignUp = (event) => {
-    event.preventDefault()
-    createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        if (userCredential && auth.currentUser) {
-          updateProfile(auth.currentUser, {
-            displayName: username
-          })
-        }
-        console.log('signedUp')
-        console.log(userCredential.user)
-      })
-      .catch((error) => {
-        console.log(error)
-        const errorCode = error.code;
-        const errorMessage = error.message;
-      })
-  }
-  const handleLogin = (event) => {
-    event.preventDefault()
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        setUser(userCredential)
-        console.log('logged in')
-        console.log(userCredential.user)
-      })
-      .catch((error) => {
-        console.log(error)
-        const errorCode = error.code;
-        const errorMessage = error.message;
-      })
-  }
-  const handleLogOut = () => {
-    auth.signOut()
-  }
   useEffect(() => {
-    auth.onAuthStateChanged( (firebaseuser) => {
-      if (firebaseuser) {
-        console.log(firebaseuser)
-        console.log('user is signed in')
-        router.push("/logged_in")
-      } else {
-        console.log('user is logged out')
-      }
-    })
-  , []})
-  
+    if (loading) {
+      // trigger loading screen
+      return;
+    }
+    if (user) {
+      router.push("/logged_in")
+    }
+  },[user, loading])
+
+  // const handleSignUp = (event) => {
+  //   event.preventDefault()
+  //   createUserWithEmailAndPassword(auth, email, password)
+  //     .then((userCredential) => {
+  //       if (userCredential && auth.currentUser) {
+  //         updateProfile(auth.currentUser, {
+  //           displayName: username
+  //         })
+  //       }
+  //       console.log('signedUp')
+  //       console.log(userCredential.user)
+  //     })
+  //     .catch((error) => {
+  //       console.log(error)
+  //       const errorCode = error.code;
+  //       const errorMessage = error.message;
+  //     })
+  // }
+  // const handleLogin = (event) => {
+  //   event.preventDefault()
+  //   signInWithEmailAndPassword(auth, email, password)
+  //     .then((userCredential) => {
+  //       setUser(userCredential)
+  //       setIsAthenticated(true)
+  //       console.log('logged in')
+  //       console.log(userCredential.user)
+  //     })
+  //     .catch((error) => {
+  //       console.log(error)
+  //       const errorCode = error.code;
+  //       const errorMessage = error.message;
+  //     })
+  // }
 
   return (
     <>
@@ -175,15 +170,15 @@ export default function SignUp() {
     <MainContainer>
     {showlogin ? 
       <FormContainer>
-          <div><h2 onClick={() => showlogin === true ? setShowLogin(false): setShowLogin(true)}>Log In</h2><h2 className='active'>Sign Up</h2></div>
-          <form onSubmit={handleSignUp}>
+          <div><h2 onClick={() => showlogin === true ? setShowlogin(false): setShowlogin(true)}>Log In</h2><h2 className='active'>Sign Up</h2></div>
+          <form onSubmit={() => console.log('signup submit')}>
             
-            <label>Username</label>
+            {/* <label>Username</label>
             <input 
               type='username'
               placeholder='Username'
               onChange={(event) => setusername(event.target.value)}
-            />
+            /> */}
             <label>Email</label>
             <input
               type='email'
@@ -203,8 +198,8 @@ export default function SignUp() {
         </FormContainer>
         :
         <FormContainer>
-          <div><h2 className='active'>Log In</h2><h2 onClick={() => showlogin === true ? setShowLogin(false): setShowLogin(true)}>Sign Up</h2></div>
-        <form onSubmit={handleLogin}>
+          <div><h2 className='active'>Log In</h2><h2 onClick={() => showlogin === true ? setShowlogin(false): setShowlogin(true)}>Sign Up</h2></div>
+        <form onSubmit={() => console.log('login submit')}>
           <label>Email</label>
           <input
             type='email'

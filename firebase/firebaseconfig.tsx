@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp} from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, signInWithPopup, signInWithEmailAndPassword,createUserWithEmailAndPassword,sendPasswordResetEmail,signOut, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore, query,getDocs,collection, where, addDoc } from "firebase/firestore"
 // import { getAnalytics } from "firebase/analytics";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -22,4 +23,77 @@ const firebaseConfig = {
 const firebase = initializeApp(firebaseConfig)
 // const analytics = getAnalytics(firebaseApp);
 
-export const auth = getAuth(firebase);
+const auth = getAuth(firebase);
+
+const db = getFirestore(firebase)
+
+const googleProvider = new GoogleAuthProvider()
+
+const signInWithGoogle = async () => {
+  try {
+    const res = await signInWithPopup(auth,googleProvider)
+    const user = res.user
+    const q = query(collection(db, "users"),where("uid", "==",user.uid))
+    const docs = await getDocs(q)
+    if (docs.docs.length === 0) {
+      await addDoc(collection(db, "users"), {
+        uid: user.uid,
+        name: user.displayName,
+        authProvider: "google",
+        email: user.email
+      })
+    }
+  } catch (err) {
+    console.error(err)
+    alert(err.message)
+  }
+}
+
+const logInWithEmailAndPassword = async (email, password) => {
+  try {
+    await signInWithEmailAndPassword(auth, email, password)
+  } catch (err) {
+    console.error(err)
+    alert(err.message)
+  }
+}
+
+const registerWithEmailAndPassword = async (name, email, password) => {
+  try {
+    const res = await createUserWithEmailAndPassword(auth, email, password)
+    const user = res.user
+    await addDoc(collection(db, "users"), {
+      uid: user.uid,
+      name: name,
+      authProvider: "local",
+      email
+    })
+  } catch (err) {
+    console.error(err)
+    alert(err.message)
+  }
+}
+
+const sendPasswordReset = async (email) => {
+  try {
+    await sendPasswordResetEmail(auth, email)
+    alert("password reset link sent!")
+  } catch (err) {
+    console.error(err)
+    alert (err.message)
+  }
+}
+
+const logout = () => {
+  signOut(auth)
+}
+
+export {
+  auth,
+  db,
+  signInWithGoogle,
+  signInWithEmailAndPassword,
+  registerWithEmailAndPassword,
+  sendPasswordReset,
+  logout
+}
